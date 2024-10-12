@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Neural Style Transfer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: "Raleway", sans-serif
+        }
+
+        body,
+        html {
+            height: 100%;
+            line-height: 1.8;
+        }
+
+        /* Full height image header */
+        .bgimg-1 {
+            background-position: center;
+            background-size: cover;
+            background-image: url("static/img/bg.png");
+            min-height: 100%;
+        }
+
+        .w3-bar .w3-button {
+            padding: 16px;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cccccc;
+            display: inline-block;
+            text-align: center;
+            padding: 10px;
+            margin: 10px;
+            position: relative;
+            background-color: #f9f9f9;
+            color: #999;
+            cursor: pointer;
+            overflow: hidden;
+            transition: width 0.3s, height 0.3s;
+            /* Smooth transition */
+        }
+
+        .drop-zone img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #merged-image img {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        #submit-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+        }
+
+        /* Optional: Set a max width for drop zones to avoid them growing too large */
+        .drop-zone {
+            max-width: 500px;
+            max-height: 500px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header with full-height image -->
+    <header class="bgimg-1 w3-display-container w3-opacity-min" id="home">
+        <div class="w3-display-middle" style="white-space:nowrap;">
+            <span class="w3-center w3-padding-large w3-black w3-xlarge w3-wide w3-animate-opacity"><a href="#demo">Try Demo</a>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <div class="w3-container" style="padding:128px 16px; text-align: center;" id="demo">
+        <h2>Please Select Two Images</h2>
+        
+        <div class="drop-zone" id="dropzone1">Drop Content Image or click to choose</div>
+        <input type="file" id="file-input1" style="display: none;" accept="image/*">
+        
+        <div class="drop-zone" id="dropzone2">Drop Style Image or click to choose</div>
+        <input type="file" id="file-input2" style="display: none;" accept="image/*">
+        
+        <br>
+        <button id="submit-btn">Transform</button>
+        
+        <h3>Result Image:</h3>
+        <div id="merged-image"></div>
+    </div>
+
+    <div id="loading" style="display:none;">
+        <img src="spinner.gif" alt="Loading..." style="width: 50px; height: 50px;">
+    </div>
+
+    <!-- Footer -->
+    <footer class="w3-center w3-black w3-padding-64">
+        <a href="#home" class="w3-button w3-light-grey"><i class="fa fa-arrow-up w3-margin-right"></i>To the top</a>
+        <p>Powered by <a href="https://github.com/annepham1512" title="annepham1512" target="_blank"
+                class="w3-hover-text-green">annepham1512</a></p>
+    </footer>
+
+    <script>
+        let img1, img2;
+        const dropzone1 = document.getElementById('dropzone1');
+        const dropzone2 = document.getElementById('dropzone2');
+        const fileInput1 = document.getElementById('file-input1');
+        const fileInput2 = document.getElementById('file-input2');
+        const submitBtn = document.getElementById('submit-btn');
+        const mergedImageDiv = document.getElementById('merged-image');
+
+        // Function to handle image display in the drop zone and adjust size
+        function handleFile(file, dropzone, imgVar) {
+            imgVar = file;
+
+            // Create a temporary URL to display the image
+            const imgElement = document.createElement('img');
+            imgElement.src = URL.createObjectURL(file);
+
+            // Wait for the image to load to get its natural size
+            imgElement.onload = () => {
+                const naturalWidth = imgElement.naturalWidth;
+                const naturalHeight = imgElement.naturalHeight;
+
+                // Set the drop zone size based on the image's natural dimensions
+                dropzone.style.width = `${naturalWidth}px`;
+                dropzone.style.height = `${naturalHeight}px`;
+
+                // Clear the dropzone and append the new image
+                dropzone.innerHTML = '';
+                dropzone.appendChild(imgElement);
+            };
+
+            return imgVar;
+        }
+
+        // Function to handle image drop event
+        function handleDrop(e, dropzone, imgVar) {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            return handleFile(file, dropzone, imgVar);
+        }
+
+        // Handle drag over event to allow dropping
+        dropzone1.addEventListener('dragover', (e) => e.preventDefault());
+        dropzone2.addEventListener('dragover', (e) => e.preventDefault());
+
+        // Handle drop for image 1
+        dropzone1.addEventListener('drop', (e) => {
+            img1 = handleDrop(e, dropzone1, img1);
+        });
+
+        // Handle drop for image 2
+        dropzone2.addEventListener('drop', (e) => {
+            img2 = handleDrop(e, dropzone2, img2);
+        });
+
+        // Handle click to open file picker for dropzone1
+        dropzone1.addEventListener('click', () => fileInput1.click());
+        dropzone2.addEventListener('click', () => fileInput2.click());
+
+        // Handle file selection for file-input1
+        fileInput1.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                img1 = handleFile(file, dropzone1, img1);
+            }
+        });
+
+        // Handle file selection for file-input2
+        fileInput2.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                img2 = handleFile(file, dropzone2, img2);
+            }
+        });
+
+        // Handle button click to send the images to the backend
+        submitBtn.addEventListener('click', () => {
+            if (!img1 || !img2) {
+                alert('Please upload two images');
+                return;
+            }
+
+            loading.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('image1', img1);
+            formData.append('image2', img2);
+
+            fetch('/merge-images', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    mergedImageDiv.innerHTML = `<img src="${url}" alt="Merged Image" style="width: 1000px; height: auto;">`;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    // Hide the loading spinner when the request is complete
+                    loading.style.display = 'none';
+                });
+        });
+    </script>
+
+</body>
+
+</html>
