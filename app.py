@@ -14,16 +14,22 @@ app = Flask(__name__)
 
 def load_img(img):
     max_dim = 512
-    img = tf.image.decode_image(img.getvalue(), channels=3)
+
+    # Read the image content as bytes
+    img_bytes = img.read()
+
+    # Decode the image content into a TensorFlow tensor
+    img = tf.image.decode_image(img_bytes, channels=3)
     img = tf.image.convert_image_dtype(img, tf.float32)
+
+    # Resize the image to maintain the aspect ratio
     shape = tf.cast(tf.shape(img)[:-1], tf.float32)
     long_dim = max(shape)
     scale = max_dim / long_dim
-
     new_shape = tf.cast(shape * scale, tf.int32)
 
     img = tf.image.resize(img, new_shape)
-    img = img[tf.newaxis, :]
+    img = img[tf.newaxis, :]  # Add batch dimension
     return img
 
 def tensor_to_image(tensor):
@@ -44,10 +50,7 @@ def merge_images():
     content_image = request.files['image1']
     style_image = request.files['image2']
     
-    # Open images using PIL
-    # content_image = Image.open(image1)
-    # style_image = Image.open(image2)
-
+    # Process the images
     content_image = load_img(content_image)
     style_image = load_img(style_image)
 
@@ -56,10 +59,12 @@ def merge_images():
 
     # Save the combined image to a BytesIO object
     img_byte_arr = BytesIO()
-    stylized_image.save(img_byte_arr, format='PNG')
+    stylized_image.save(img_byte_arr, format='JPEG')
     img_byte_arr.seek(0)
     
-    return send_file(img_byte_arr, mimetype='image/jpeg')
+    # Explicitly set the MIME type
+    return send_file(img_byte_arr, mimetype='image/jpeg', as_attachment=True, download_name='stylized_image.jpeg')
+
 
 if __name__ == '__main__':
     app.run(debug=False)
